@@ -14,6 +14,8 @@ export const pullRequestsMapper = (body) => ({
 	pull_requests: body.data.repository.pullRequests.nodes.map((pullRequest) => ({
 		title: pullRequest.title,
 		state: pullRequest.state,
+		additions: pullRequest.additions,
+		deletions: pullRequest.deletions,
 		number: pullRequest.number,
 		total_comments: pullRequest.reviews.edges.reduce((accum, actual) => actual.node.comments.totalCount + accum, 0),
 		duration: pullRequest.state === 'MERGED' ? hoursBetween(pullRequest.createdAt, pullRequest.mergedAt) : null,

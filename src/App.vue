@@ -13,6 +13,7 @@
       <p>Reviewers: {{ pullRequest.reviewers }}</p>
       <p>Number of rejects: {{ pullRequest.rejects_count }}</p>
       <p>Comments: {{ pullRequest.total_comments }}</p>
+      <p>Lines: {{ pullRequest.additions }}++ / {{ pullRequest.deletions }}-- (diff {{ pullRequest.additions - pullRequest.deletions }})</p>
       <p>Average pickup time: {{ averagePickupTime(pullRequest.reviews) }} hours</p>
     </div>
   </div>

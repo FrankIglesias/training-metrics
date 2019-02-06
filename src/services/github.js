@@ -21,6 +21,8 @@ query {
         number,
         state,
         title,
+        deletions,
+        additions,
         createdAt,
         mergedAt,
         author {
