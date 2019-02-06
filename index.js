@@ -15,31 +15,28 @@ const requestFrom = uri => request({ uri , headers, json: true });
 
 const daysBetween = (start, end) =>  moment.range(start, end).diff('days');
 
-const analizePullRequests = pullRequest =>
-  requestFrom(pullRequest.review_comments_url)
-    .then(comments => {
-      console.log('===================');
-      console.log('Title: ', pullRequest.title);
-      console.log('Status: ', pullRequest.state);
-      if (pullRequest.state === 'closed') {
-        let daysOpened = daysBetween(pullRequest.created_at, pullRequest.closed_at);
-        console.log('Merge time: ', daysOpened);
-      }
-      console.log('Amount of comments: ', comments.length);
-      requestFrom(`${pullRequest.url}/reviews`).then(reviews => {
-        reviews.forEach(review => {
-          requestFrom(`${baseUrl}${reponame}/commits/${review.commit_id}`).then(commit => {
-            let pickupTime = daysBetween(commit.commit.author.date, review.submitted_at);
-            console.log(`Review pickup time: ${pickupTime} days`);
-          });
-          console.log('Reviewers: ', _.uniq(reviews.map(comment => comment.user.login)).join(' '));
-        })
-      })
-    });
+const analizePullRequests =  async pullRequest => {
+  const comments = await requestFrom(pullRequest.review_comments_url);
+  console.log('===================');
+  console.log('Title: ', pullRequest.title);
+  console.log('Status: ', pullRequest.state);
+  if (pullRequest.state === 'closed') {
+    let daysOpened = daysBetween(pullRequest.created_at, pullRequest.closed_at);
+    console.log('Merge time: ', daysOpened);
+  }
+  console.log('Amount of comments: ', comments.length);
+  const reviews = await requestFrom(`${pullRequest.url}/reviews`);
+  reviews.forEach(async review => {
+    let commit = await requestFrom(`${baseUrl}${reponame}/commits/${review.commit_id}`);
+    let pickupTime = daysBetween(commit.commit.author.date, review.submitted_at);
+    console.log(`Review pickup time: ${pickupTime} days`);
+  });
+  console.log('Reviewers: ', _.uniq(reviews.map(comment => comment.user.login)).join(' '));
+}
 
 requestFrom(`${baseUrl}${reponame}/pulls?state=all`).then(async pullRequests => {
   console.log('Amount of pull requests ', pullRequests.length);
   console.log('Merged pull requests ', pullRequests.filter(pull => pull.state === 'closed').length);
   console.log('Open pull requests ', pullRequests.filter(pull => pull.state === 'open').length);
   await Promise.all(pullRequests.map(analizePullRequests));
-});
+})
