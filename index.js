@@ -1,4 +1,8 @@
 const request = require("request-promise");
+const Moment = require('moment');
+const MomentRange = require('moment-range');
+const _ = require('lodash');
+const moment = MomentRange.extendMoment(Moment);
 const baseUrl = "https://api.github.com/repos/wolox-training/";
 const reponame = "fdr-react";
 const headers = {
@@ -7,36 +11,35 @@ const headers = {
 };
 
 
-const fetchAllComments = pullRequest =>
-  request({ uri: pullRequest.review_comments_url, headers, json: true })
+const requestFrom = uri => request({ uri , headers, json: true });
+
+const daysBetween = (start, end) =>  moment.range(start, end).diff('days');
+
+const analizePullRequests = pullRequest =>
+  requestFrom(pullRequest.review_comments_url)
     .then(comments => {
       console.log('===================');
       console.log('Title: ', pullRequest.title);
       console.log('Status: ', pullRequest.state);
       if (pullRequest.state === 'closed') {
-        let daysOpened = ((new Date(pullRequest.closed_at) - new Date(pullRequest.created_at)) / (1000 * 60 * 60 * 24)).toFixed();
+        let daysOpened = daysBetween(pullRequest.created_at, pullRequest.closed_at);
         console.log('Merge time: ', daysOpened);
       }
       console.log('Amount of comments: ', comments.length);
-
-      request({ uri: `${pullRequest.url}/reviews`, headers, json: true }).then(reviews => {
+      requestFrom(`${pullRequest.url}/reviews`).then(reviews => {
         reviews.forEach(review => {
-          request({ uri: `${baseUrl}${reponame}/commits/${review.commit_id}`, headers, json: true }).then(commit => {
-            let pickupTime = ((new Date(review.submitted_at) - new Date(commit.commit.author.date)) / (1000 * 60 * 60 * 24)).toFixed();
+          requestFrom(`${baseUrl}${reponame}/commits/${review.commit_id}`).then(commit => {
+            let pickupTime = daysBetween(commit.commit.author.date, review.submitted_at);
             console.log(`Review pickup time: ${pickupTime} days`);
           });
-          console.log('Reviewers: ', [...new Set(reviews.map(comment => comment.user.login))].join(' '));
+          console.log('Reviewers: ', _.uniq(reviews.map(comment => comment.user.login)).join(' '));
         })
       })
     });
 
-request({
-  uri: `${baseUrl}${reponame}/pulls?state=all`,
-  headers,
-  json: true
-}).then(async pullRequests => {
+requestFrom(`${baseUrl}${reponame}/pulls?state=all`).then(async pullRequests => {
   console.log('Amount of pull requests ', pullRequests.length);
   console.log('Merged pull requests ', pullRequests.filter(pull => pull.state === 'closed').length);
   console.log('Open pull requests ', pullRequests.filter(pull => pull.state === 'open').length);
-  await Promise.all(pullRequests.map(fetchAllComments));
+  await Promise.all(pullRequests.map(analizePullRequests));
 });
