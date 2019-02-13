@@ -17,6 +17,8 @@ export const pullRequestsMapper = (body) => ({
 		additions: pullRequest.additions,
 		deletions: pullRequest.deletions,
 		number: pullRequest.number,
+		url: pullRequest.url,
+		created_at: pullRequest.createdAt,
 		total_comments: pullRequest.reviews.edges.reduce((accum, actual) => actual.node.comments.totalCount + accum, 0),
 		duration: pullRequest.state === 'MERGED' ? hoursBetween(pullRequest.createdAt, pullRequest.mergedAt) : null,
 		reviews: pullRequest.reviews.nodes.map((review) => ({
