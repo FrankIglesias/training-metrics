@@ -14,6 +14,7 @@
       <h3>Merged pull requests: {{ repositoryInfo.merged_pull_requests }}</h3>
       <h3>Open pull requests: {{ repositoryInfo.open_pull_requests }}</h3>
       <h3>Total pull requests: {{ repositoryInfo.total_pull_requests }}</h3>
+      <h3>Reviewers: {{ reviewers }}</h3>
     </div>
     <div
       class="main-chart-container"
@@ -80,13 +81,15 @@
 </template>
 
 <script>
-import Vue from "vue";
-import { getRepositoryInfo } from "./services/github";
-import VueApexCharts from "vue-apexcharts";
-Vue.use(VueApexCharts);
+import Vue from "vue"
+import { getRepositoryInfo } from "./services/github"
+import VueApexCharts from "vue-apexcharts"
+import _ from 'lodash'
 
-Vue.component("apexchart", VueApexCharts);
-import { pullRequestsMapper } from "./services/mapper";
+Vue.use(VueApexCharts)
+
+Vue.component("apexchart", VueApexCharts)
+import { pullRequestsMapper } from "./services/mapper"
 
 export default {
   name: "app",
@@ -95,9 +98,9 @@ export default {
     repositoryInfo: {}
   }),
   computed: {
-    options(type = "line") {
+    options() {
       return {
-        type: type,
+        type: 'line',
         stroke: {
           show: true,
           curve: "smooth",
@@ -112,6 +115,12 @@ export default {
           }
         }
       };
+    },
+    reviewers() {
+      return _.uniq(this.repositoryInfo.pull_requests
+        .map(pullRequest => pullRequest.reviewers)
+        .reduce((accum, value) => ([...accum, ...value]), [])
+        .map(reviewer => reviewer.login)).join(' ');
     }
   },
   methods: {
@@ -132,32 +141,32 @@ export default {
           name: name,
           data: dataGenerator()
         }
-      ];
+      ]
     },
     rejectsChartData() {
       return this.repositoryInfo.pull_requests.map(
         pullRequest => pullRequest.rejects_count
-      );
+      )
     },
     pickupChartData() {
       return this.repositoryInfo.pull_requests.map(pullRequest =>
         this.averagePickupTime(pullRequest.reviews)
-      );
+      )
     },
     durationChartData() {
       return this.repositoryInfo.pull_requests.map(
         pullRequest => pullRequest.duration
-      );
+      )
     },
     linesChartData() {
       return this.repositoryInfo.pull_requests.map(
-        pullRequest => pullRequest.additions
-      );
+        pullRequest => pullRequest.additions - pullRequest.deletions
+      )
     },
     commentsChartData() {
       return this.repositoryInfo.pull_requests.map(
         pullRequest => pullRequest.total_comments
-      );
+      )
     }
   }
 };

@@ -26,9 +26,9 @@ export const pullRequestsMapper = (body) => ({
 		})).sort((a,b) => a.number - b.number),
 		reviewers: _.uniq(
 			pullRequest.reviews.nodes
-				.map((review) => review.author.login)
-				.filter((author) => author !== pullRequest.author.login)
-		).join(' '),
+				.map((review) => review.author)
+				.filter((author) => author.login !== pullRequest.author.login)
+		),
 		rejects_count: pullRequest.reviews.nodes.filter((review) => review.state === 'CHANGES_REQUESTED').length
 	}))
 })

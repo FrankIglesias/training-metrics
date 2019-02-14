@@ -3,7 +3,7 @@ import graphqlClient  from 'graphql-client'
 const headers = {
   "User-Agent":
     "Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/38.0.2125.111 Safari/537.36",
-  "Authorization": `bearer 7c24c4fb345c0e903c13c6bac6f787e2689876dd`
+    "Authorization": `bearer ${process.env.VUE_APP_GITHUB_OAUTH_TOKEN}`
 }
 
 const client = graphqlClient({
@@ -46,7 +46,9 @@ query {
               }
             }
             author {
-              login
+              login,
+              avatarUrl,
+              url
             }
           }
         }
