@@ -14,7 +14,7 @@ const client = graphqlClient({
 
 export const getRepositoryInfo = repository => client.query(`
 query {
-  repository(name:"${repository}", owner:"wolox-training") {
+  repository(name:"${repository}", owner:"Wolox") {
     pullRequests(first:100) {
     totalCount,
       nodes {
