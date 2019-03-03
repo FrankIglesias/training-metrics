@@ -1,9 +1,9 @@
-import graphqlClient  from 'graphql-client'
+import graphqlClient from 'graphql-client'
 
 const headers = {
-  "User-Agent":
-    "Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/38.0.2125.111 Safari/537.36",
-    "Authorization": `bearer ${process.env.VUE_APP_GITHUB_OAUTH_TOKEN}`
+  'User-Agent':
+    'Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/38.0.2125.111 Safari/537.36',
+  Authorization: `bearer ${process.env.NUXT_ENV_GITHUB_OAUTH_TOKEN}`
 }
 
 const client = graphqlClient({
@@ -11,10 +11,11 @@ const client = graphqlClient({
   headers
 })
 
-
-export const getRepositoryInfo = repository => client.query(`
+export const getRepositoryInfo = repository =>
+  client.query(
+    `
 query {
-  repository(name:"${repository}", owner:"Wolox") {
+  repository(name:"${repository}", owner:"wolox-training") {
     pullRequests(first:100) {
     totalCount,
       nodes {
@@ -55,4 +56,7 @@ query {
       }
     }
   }
-}`, null, null)
+}`,
+    null,
+    null
+  )
