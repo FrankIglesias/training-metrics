@@ -1,13 +1,9 @@
 const express = require('express')
 const app = express()
-const { getRepositoryInfo } = require('../interactors/github')
-const { pullRequestsMapper } = require('../mappers/github')
+const { getMetrics } = require('../controllers/github')
 
-app.get('/metrics', (req, res, next) => {
-  getRepositoryInfo(req.query.repository).then(response => {
-    res.send(pullRequestsMapper(response))
-  })
-})
+app.get('/metrics', getMetrics)
+
 // export the server middleware
 module.exports = {
   path: '/api',
