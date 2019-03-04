@@ -51,13 +51,8 @@ export default {
       items: [
         {
           icon: 'apps',
-          title: 'Welcome',
+          title: 'Dashboard',
           to: '/'
-        },
-        {
-          icon: 'bubble_chart',
-          title: 'Inspire',
-          to: '/inspire'
         }
       ],
       miniVariant: false,

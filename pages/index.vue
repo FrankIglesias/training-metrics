@@ -6,57 +6,57 @@
       class="progress-bar"
       color="#75aa81"
     />
-    <v-flex row>
+    <v-snackbar
+      v-model="error"
+      vertical
+      top
+      left
+      :multi-line="false"
+    >
+      {{ errorMessage }}
+    </v-snackbar>
+    <v-layout row justify-space-between>
       <v-text-field
-        v-model="repositoryName"
+        v-model="repositoryUrl"
         color="#75aa81"
       />
       <v-btn @click="fetchData()">
         Search
       </v-btn>
-    </v-flex>
+    </v-layout>
     <div v-if="repositoryInfo.pull_requests">
-      <span class="text-xs-center">
-        <v-chip>
-          Closed pull requests: {{ repositoryInfo.closed_pull_requests }}
-        </v-chip>
-      </span>
-      <span class="text-xs-center">
-        <v-chip>
-          Total average pickup: {{ averageTotalPickupTime }}
-        </v-chip>
-      </span>
-      <span class="text-xs-center">
-        <v-chip>
-          Merged pull requests: {{ repositoryInfo.merged_pull_requests }}
-        </v-chip>
-      </span>
-      <span class="text-xs-center">
-        <v-chip>Open pull requests: {{ repositoryInfo.open_pull_requests }}</v-chip>
-      </span>
-      <span class="text-xs-center">
-        <v-chip>Total pull requests: {{ repositoryInfo.total_pull_requests }}</v-chip>
-      </span>
-      <v-flex row>
-        <h3>Reviewers</h3>
-        <span
-          v-for="reviewer in reviewers"
+      <chip>
+        Closed pull requests: {{ repositoryInfo.closed_pull_requests }}
+      </chip>
+      <chip>
+        Total average pickup: {{ repositoryInfo.average_pickup_time }}
+      </chip>
+      <chip>
+        Merged pull requests: {{ repositoryInfo.merged_pull_requests }}
+      </chip>
+      <chip>
+        Open pull requests: {{ repositoryInfo.open_pull_requests }}
+      </chip>
+      <chip>
+        Total pull requests: {{ repositoryInfo.total_pull_requests }}
+      </chip>
+      <v-layout align-center justify-start row>
+        <h3>Reviewers: </h3>
+        <chip
+          v-for="reviewer in repositoryInfo.reviewers"
           :key="reviewer.login"
-          class="text-xs-center"
         >
-          <v-chip>
-            <a
-              :href="reviewer.url"
-              target="_blank"
-              class="blue--text"
-            >
-              <v-avatar>
-                <img :src="reviewer.avatarUrl">
-              </v-avatar>{{ reviewer.login }}
-            </a>
-          </v-chip>
-        </span>
-      </v-flex>
+          <a
+            :href="reviewer.url"
+            target="_blank"
+            class="blue--text"
+          >
+            <v-avatar>
+              <img :src="reviewer.avatarUrl">
+            </v-avatar>{{ reviewer.login }}
+          </a>
+        </chip>
+      </v-layout>
     </div>
     <div
       v-if="repositoryInfo.pull_requests"
@@ -65,58 +65,45 @@
       <chart
         title="Amount of rebounds per pull request"
         labels="Rejects"
-        :metric="this.rejectsChartData"
+        metric="rejects_count"
+        :pull-requests="repositoryInfo.pull_requests"
       />
       <chart
         title="Average pickup time (hours)"
         labels="Pickup average time"
-        :metric="this.pickupChartData"
+        metric="pickup_time"
+        :pull-requests="repositoryInfo.pull_requests"
       />
       <chart
         title="Average duration time (hours)"
         labels="Duration"
-        :metric="this.durationChartData"
+        metric="duration"
+        :pull-requests="repositoryInfo.pull_requests"
       />
       <chart
         title="Number of lines"
         :labels="['Addition', 'Deletion']"
-        :metric="[this.additionChartData, this.deletionChartData]"
+        :metric="['additions', 'deletions']"
+        :pull-requests="repositoryInfo.pull_requests"
       />
       <chart
         title="Number of comments"
         labels="Comments"
-        :metric="this.commentsChartData"
+        metric="total_comments"
+        :pull-requests="repositoryInfo.pull_requests"
       />
     </div>
-    <v-list>
-      <v-list-group>
-        <template v-slot:activator>
-          <v-list-tile>
-            <v-list-tile-content>
-              <v-list-tile-title>Pull requests</v-list-tile-title>
-            </v-list-tile-content>
-          </v-list-tile>
-        </template>
-        <v-list-tile
-          v-for="pullRequest in repositoryInfo.pull_requests"
-          :key="pullRequest.number"
-        >
-          <v-list-tile-content>
-            <v-list-tile-title>{{ pullRequest.number }}. {{ pullRequest.title }} - {{ pullRequest.state }}</v-list-tile-title>
-          </v-list-tile-content>
-          <v-list-tile-action />
-        </v-list-tile>
-      </v-list-group>
-    </v-list>
+    <pull-request-list :pull-requests="repositoryInfo.pull_requests" />
   </div>
 </template>
 
 <script>
 import Vue from 'vue'
-import _ from 'lodash'
 import { getRepositoryInfo } from '../interactors/github'
 import { pullRequestsMapper } from '../mappers/github'
 import Chart from '../components/Chart'
+import Chip from '../components/Chip'
+import PullRequestList from '../components/PullRequestList'
 
 if (process.client) {
   const VueApexCharts = require('vue-apexcharts')
@@ -127,39 +114,42 @@ if (process.client) {
 export default {
   name: 'App',
   components: {
-    Chart
+    Chart,
+    Chip,
+    PullRequestList
   },
-  data: () => ({
-    repositoryName: 'fdr-react',
-    repositoryInfo: {},
-    loading: false
-  }),
-  computed: {
-    averageTotalPickupTime() {
-      const variable =
-        _.sum(
-          this.repositoryInfo.pull_requests
-            .map(pullRequest => pullRequest.duration)
-            .filter(value => !isNaN(value))
-        ) / this.repositoryInfo.pull_requests.length
-      return variable
-    },
-    reviewers() {
-      return _.uniqBy(
-        this.repositoryInfo.pull_requests
-          .map(pullRequest => pullRequest.reviewers)
-          .reduce((accum, value) => [...accum, ...value], []),
-        reviewer => reviewer.login
-      )
+  data() {
+    return {
+      repositoryUrl: 'https://github.com/wolox-training/fd-express-js',
+      repositoryInfo: {},
+      loading: false,
+      repositoryRegex: /https:\/\/github\.com\/(wolox-training|Wolox)\/([a-zA-Z0-9]|-[a-zA-Z0-9])*$/,
+      errorMessage: null,
+      error: false
     }
   },
   methods: {
     fetchData() {
-      this.loading = true
-      getRepositoryInfo(this.repositoryName).then(response => {
-        this.repositoryInfo = pullRequestsMapper(response)
-        this.loading = false
-      })
+      if (this.repositoryRegex.test(this.repositoryUrl)) {
+        this.loading = true
+        const repositoryData = this.repositoryUrl.split('/').slice(3)
+        getRepositoryInfo({
+          organization: repositoryData[0],
+          repository: repositoryData[1]
+        })
+          .then(response => {
+            this.repositoryInfo = pullRequestsMapper(response)
+            this.loading = false
+          })
+          .catch(() => {
+            this.errorMessage = 'Invalid repository'
+            this.error = true
+            this.loading = false
+          })
+      } else {
+        this.errorMessage = 'This is not a valid repository url'
+        this.error = true
+      }
     },
     averagePickupTime(reviews) {
       return (
@@ -167,29 +157,14 @@ export default {
         reviews.length
       ).toFixed(2)
     },
-    chartData(names, dataGenerator) {
-      if (typeof names === 'object')
-        return names.map((name, index) => ({
-          name: name,
-          data: dataGenerator[index]()
-        }))
-      else {
-        return [
-          {
-            name: names,
-            data: dataGenerator()
-          }
-        ]
-      }
-    },
     rejectsChartData() {
       return this.repositoryInfo.pull_requests.map(
         pullRequest => pullRequest.rejects_count
       )
     },
     pickupChartData() {
-      return this.repositoryInfo.pull_requests.map(pullRequest =>
-        this.averagePickupTime(pullRequest.reviews)
+      return this.repositoryInfo.pull_requests.map(
+        pullRequest => pullRequest.pickup_time
       )
     },
     durationChartData() {
@@ -245,12 +220,6 @@ h4 {
   display: flex;
   width: 100%;
   flex-wrap: wrap;
-}
-
-.row {
-  display: flex;
-  width: 100%;
-  justify-content: space-between;
 }
 
 .progress-bar {

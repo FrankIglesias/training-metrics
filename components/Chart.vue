@@ -5,7 +5,7 @@
     </h3>
     <apexchart
       type="area"
-      :series="this.chartData(labels, metric)"
+      :series="this.generateData()"
       :options="options"
       height="200"
       width="300"
@@ -15,12 +15,11 @@
 
 <script>
 export default {
-  props: ['title', 'labels', 'metric'],
+  props: ['title', 'labels', 'metric', 'pullRequests'],
   computed: {
     options() {
       return {
         stroke: {
-          show: true,
           width: 2,
           curve: 'smooth',
           colors: ['#60B686']
@@ -37,17 +36,20 @@ export default {
     }
   },
   methods: {
-    chartData(names, dataGenerator) {
-      if (typeof names === 'object')
-        return names.map((name, index) => ({
+    generateData() {
+      debugger
+      if (typeof this.labels === 'object')
+        return this.labels.map((name, index) => ({
           name: name,
-          data: dataGenerator[index]()
+          data: this.pullRequests.map(
+            pullRequest => pullRequest[this.metric[index]]
+          )
         }))
       else {
         return [
           {
-            name: names,
-            data: dataGenerator()
+            name: this.labels,
+            data: this.pullRequests.map(pullRequest => pullRequest[this.metric])
           }
         ]
       }
@@ -55,6 +57,3 @@ export default {
   }
 }
 </script>
-
-<style>
-</style>

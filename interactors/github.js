@@ -11,11 +11,14 @@ const client = graphqlClient({
   headers
 })
 
-export const getRepositoryInfo = repository =>
+export const getRepositoryInfo = ({
+  repository,
+  organization = 'wolox-training'
+}) =>
   client.query(
     `
 query {
-  repository(name:"${repository}", owner:"wolox-training") {
+  repository(name:"${repository}", owner:"${organization}") {
     pullRequests(first:100) {
     totalCount,
       nodes {
@@ -31,6 +34,7 @@ query {
           login
         }
         reviews(first: 100) {
+          totalCount
           edges {
             node {
               comments {
