@@ -19,10 +19,10 @@ export const getRepositoryInfo = ({
     `
 query {
   repository(name:"${repository}", owner:"${organization}") {
-    pullRequests(first:100) {
-    totalCount,
+    pullRequests(last:100) {
       nodes {
         number,
+        updatedAt,
         state,
         title,
         url,

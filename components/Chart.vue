@@ -31,13 +31,25 @@ export default {
           labels: {
             show: false
           }
+        },
+        legend: {
+          position: 'top',
+          labels: {
+            colors: ['white']
+          }
+        },
+        tooltip: {
+          theme: 'dark',
+          style: {
+            color: 'black',
+            backgroundColor: 'white'
+          }
         }
       }
     }
   },
   methods: {
     generateData() {
-      debugger
       if (typeof this.labels === 'object')
         return this.labels.map((name, index) => ({
           name: name,
@@ -49,7 +61,10 @@ export default {
         return [
           {
             name: this.labels,
-            data: this.pullRequests.map(pullRequest => pullRequest[this.metric])
+            data: this.pullRequests.map(
+              pullRequest => pullRequest[this.metric]
+            ),
+            color: '#60B686'
           }
         ]
       }

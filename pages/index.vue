@@ -20,6 +20,21 @@
         v-model="repositoryUrl"
         color="#75aa81"
       />
+      <v-btn @click="toggleDates()">
+        Filter by dates
+      </v-btn>
+      <v-date-picker
+        v-if="dates"
+        v-model="dateStart"
+        :allowed-dates="allowedDates"
+        class="mt-3"
+      />
+      <v-date-picker
+        v-if="dates"
+        v-model="dateEnd"
+        :allowed-dates="allowedDates"
+        class="mt-3"
+      />
       <v-btn @click="fetchData()">
         Search
       </v-btn>
@@ -29,7 +44,10 @@
         Closed pull requests: {{ repositoryInfo.closed_pull_requests }}
       </chip>
       <chip>
-        Total average pickup: {{ repositoryInfo.average_pickup_time }}
+        Total average pickup: {{ repositoryInfo.average_pickup_time }} hours
+      </chip>
+      <chip>
+        Total average merge time: {{ repositoryInfo.average_merge_time }} hours
       </chip>
       <chip>
         Merged pull requests: {{ repositoryInfo.merged_pull_requests }}
@@ -125,20 +143,28 @@ export default {
       loading: false,
       repositoryRegex: /https:\/\/github\.com\/(wolox-training|Wolox)\/([a-zA-Z0-9]|-[a-zA-Z0-9])*$/,
       errorMessage: null,
-      error: false
+      error: false,
+      dateStart: null,
+      dateEnd: null,
+      dates: false
     }
   },
   methods: {
     fetchData() {
       if (this.repositoryRegex.test(this.repositoryUrl)) {
         this.loading = true
+        this.dates = false
         const repositoryData = this.repositoryUrl.split('/').slice(3)
         getRepositoryInfo({
           organization: repositoryData[0],
           repository: repositoryData[1]
         })
           .then(response => {
-            this.repositoryInfo = pullRequestsMapper(response)
+            this.repositoryInfo = pullRequestsMapper(
+              response,
+              this.dateStart,
+              this.dateEnd
+            )
             this.loading = false
           })
           .catch(() => {
@@ -151,41 +177,8 @@ export default {
         this.error = true
       }
     },
-    averagePickupTime(reviews) {
-      return (
-        reviews.reduce((accum, actual) => actual.pickup_time + accum, 0) /
-        reviews.length
-      ).toFixed(2)
-    },
-    rejectsChartData() {
-      return this.repositoryInfo.pull_requests.map(
-        pullRequest => pullRequest.rejects_count
-      )
-    },
-    pickupChartData() {
-      return this.repositoryInfo.pull_requests.map(
-        pullRequest => pullRequest.pickup_time
-      )
-    },
-    durationChartData() {
-      return this.repositoryInfo.pull_requests.map(
-        pullRequest => pullRequest.duration
-      )
-    },
-    additionChartData() {
-      return this.repositoryInfo.pull_requests.map(
-        pullRequest => pullRequest.additions
-      )
-    },
-    deletionChartData() {
-      return this.repositoryInfo.pull_requests.map(
-        pullRequest => -pullRequest.deletions
-      )
-    },
-    commentsChartData() {
-      return this.repositoryInfo.pull_requests.map(
-        pullRequest => pullRequest.total_comments
-      )
+    toggleDates() {
+      this.dates = !this.dates
     }
   }
 }

@@ -26,18 +26,46 @@ const getPickupTime = review => ({
 })
 
 const getAvgPickupTime = pullRequest =>
-  (
-    _.sum(
-      pullRequest.reviews.nodes.map(
-        pullRequest => getPickupTime(pullRequest).pickup_time
-      )
-    ) / pullRequest.reviews.totalCount
+  _.mean(
+    pullRequest.reviews.nodes.map(review => getPickupTime(review).pickup_time)
   ).toFixed(2)
 
-export const pullRequestsMapper = body => {
+const getTotalAvgPickupTime = pullRequests => {
+  const reviews = pullRequests.nodes.map(
+    pullRequests => pullRequests.reviews.nodes
+  )
+  return _.mean(
+    _.flatten(reviews).map(
+      pullRequest => getPickupTime(pullRequest).pickup_time
+    )
+  ).toFixed(2)
+}
+
+const getTotalAvgMergeTime = pullRequests => {
+  const mergedPullRequestDuration = pullRequests.nodes
+    .map(pullRequest => getDuration(pullRequest))
+    .filter(dur => !isNaN(dur) && dur !== null)
+  return _.mean(mergedPullRequestDuration).toFixed(2)
+}
+
+export const pullRequestsMapper = (body, dateStart = null, dateEnd = null) => {
   const pullRequests = body.data.repository.pullRequests
+  if (dateStart && dateEnd)
+    pullRequests.nodes = pullRequests.nodes.filter(
+      pullRequest =>
+        pullRequest.state === 'MERGED'
+          ? moment(pullRequest.mergedAt).isAfter(
+              moment(dateStart, 'YYYY-MM-DD')
+            )
+          : moment(pullRequest.updatedAt).isAfter(
+              moment(dateStart, 'YYYY-MM-DD')
+            ) &&
+            moment(pullRequest.updatedAt).isBefore(
+              moment(dateEnd, 'YYYY-MM-DD')
+            )
+    )
   return {
-    total_pull_requests: pullRequests.totalCount,
+    total_pull_requests: pullRequests.nodes.length,
     merged_pull_requests: countByState('MERGED', pullRequests.nodes),
     open_pull_requests: countByState('OPEN', pullRequests.nodes),
     closed_pull_requests: countByState('CLOSED', pullRequests.nodes),
@@ -67,9 +95,7 @@ export const pullRequestsMapper = body => {
       _.flatMap(pullRequests.nodes.map(getReviewers)),
       reviewer => reviewer.login
     ),
-    average_pickup_time:
-      _.sum(
-        pullRequests.nodes.map(getAvgPickupTime).filter(value => !isNaN(value))
-      ) / pullRequests.totalCount
+    average_pickup_time: getTotalAvgPickupTime(pullRequests),
+    average_merge_time: getTotalAvgMergeTime(pullRequests)
   }
 }
