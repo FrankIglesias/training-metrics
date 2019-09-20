@@ -1,85 +1,38 @@
 <template>
   <div id="app">
-    <v-progress-linear
-      v-if="loading"
-      :indeterminate="true"
-      class="progress-bar"
-      color="#75aa81"
-    />
-    <v-snackbar
-      v-model="error"
-      vertical
-      top
-      left
-      :multi-line="false"
-    >
-      {{ errorMessage }}
-    </v-snackbar>
+    <v-progress-linear v-if="loading" :indeterminate="true" class="progress-bar" color="#75aa81" />
+    <v-snackbar v-model="error" vertical top left :multi-line="false" />
     <v-layout row justify-space-between>
-      <v-text-field
-        v-model="repositoryUrl"
-        color="#75aa81"
-      />
+      <v-text-field v-model="repositoryUrl" color="#75aa81" />
       <v-btn @click="toggleDates()">
-        Filter by dates
-      </v-btn>
-      <v-date-picker
-        v-if="dates"
-        v-model="dateStart"
-        :allowed-dates="allowedDates"
-        class="mt-3"
-      />
-      <v-date-picker
-        v-if="dates"
-        v-model="dateEnd"
-        :allowed-dates="allowedDates"
-        class="mt-3"
-      />
+Filter by dates
+</v-btn>
+      <v-date-picker v-if="dates" v-model="dateStart" :allowed-dates="allowedDates" class="mt-3" />
+      <v-date-picker v-if="dates" v-model="dateEnd" :allowed-dates="allowedDates" class="mt-3" />
       <v-btn @click="fetchData()">
-        Search
-      </v-btn>
+Search
+</v-btn>
     </v-layout>
     <div v-if="repositoryInfo.pull_requests">
-      <chip>
-        Closed pull requests: {{ repositoryInfo.closed_pull_requests }}
-      </chip>
-      <chip>
-        Total average pickup: {{ repositoryInfo.average_pickup_time }} hours
-      </chip>
-      <chip>
-        Total average merge time: {{ repositoryInfo.average_merge_time }} hours
-      </chip>
-      <chip>
-        Merged pull requests: {{ repositoryInfo.merged_pull_requests }}
-      </chip>
-      <chip>
-        Open pull requests: {{ repositoryInfo.open_pull_requests }}
-      </chip>
-      <chip>
-        Total pull requests: {{ repositoryInfo.total_pull_requests }}
-      </chip>
+      <chip>Closed pull requests: {{ repositoryInfo.closed_pull_requests }}</chip>
+      <chip>Average Pickup Time: {{ repositoryInfo.average_pickup_time }} hours</chip>
+      <chip>Average merge time: {{ repositoryInfo.average_merge_time }} hours</chip>
+      <chip>Merged pull requests: {{ repositoryInfo.merged_pull_requests }}</chip>
+      <chip>Open pull requests: {{ repositoryInfo.open_pull_requests }}</chip>
+      <chip>Total amount of pull requests: {{ repositoryInfo.total_pull_requests }}</chip>
       <v-layout align-center justify-start row>
-        <h3>Reviewers: </h3>
-        <chip
-          v-for="reviewer in repositoryInfo.reviewers"
-          :key="reviewer.login"
-        >
-          <a
-            :href="reviewer.url"
-            target="_blank"
-            class="blue--text"
-          >
+        <h3>Reviewers:</h3>
+        <chip v-for="reviewer in repositoryInfo.reviewers" :key="reviewer.login">
+          <a :href="reviewer.url" target="_blank" class="blue--text">
             <v-avatar>
-              <img :src="reviewer.avatarUrl">
-            </v-avatar>{{ reviewer.login }}
+              <img :src="reviewer.avatarUrl" >
+            </v-avatar>
+            {{ reviewer.login }}
           </a>
         </chip>
       </v-layout>
     </div>
-    <div
-      v-if="repositoryInfo.pull_requests"
-      class="main-chart-container"
-    >
+    <div v-if="repositoryInfo.pull_requests" class="main-chart-container">
       <chart
         title="Amount of rebounds per pull request"
         labels="Rejects"
@@ -102,12 +55,6 @@
         title="Number of lines"
         :labels="['Addition', 'Deletion']"
         :metric="['additions', 'deletions']"
-        :pull-requests="repositoryInfo.pull_requests"
-      />
-      <chart
-        title="Number of comments"
-        labels="Comments"
-        metric="total_comments"
         :pull-requests="repositoryInfo.pull_requests"
       />
     </div>

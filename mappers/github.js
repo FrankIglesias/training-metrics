@@ -1,13 +1,26 @@
 import Moment from 'moment'
 import { extendMoment } from 'moment-range'
+import 'moment-business-time'
 import _ from 'lodash'
+
+const MERGED = 'MERGED'
 
 const moment = extendMoment(Moment)
 
-const hoursBetween = (start, end) => moment.range(start, end).diff('hours')
+moment.locale('en', {
+  workinghours: {
+    0: null,
+    1: ['07:00:00', '20:00:00'],
+    2: ['07:00:00', '20:00:00'],
+    3: ['07:00:00', '20:00:00'],
+    4: ['07:00:00', '20:00:00'],
+    5: ['07:00:00', '20:00:00'],
+    6: null
+  }
+})
 
-const countByState = (state, pullRequests) =>
-  pullRequests.filter(pullRequest => pullRequest.state === state).length
+const hoursBetween = (start, end) =>
+  moment(end).workingDiff(moment(start), 'hours')
 
 const getReviewers = pullRequest =>
   _.uniq(
@@ -17,9 +30,9 @@ const getReviewers = pullRequest =>
   )
 
 const getDuration = pullRequest =>
-  pullRequest.state === 'MERGED'
+  pullRequest.state === MERGED
     ? hoursBetween(pullRequest.createdAt, pullRequest.mergedAt)
-    : null
+    : NaN
 
 const getPickupTime = review => ({
   pickup_time: hoursBetween(review.commit.author.date, review.createdAt)
@@ -50,10 +63,11 @@ const getTotalAvgMergeTime = pullRequests => {
 
 export const pullRequestsMapper = (body, dateStart = null, dateEnd = null) => {
   const pullRequests = body.data.repository.pullRequests
+  const repository = body.data.repository
   if (dateStart && dateEnd)
     pullRequests.nodes = pullRequests.nodes.filter(
       pullRequest =>
-        pullRequest.state === 'MERGED'
+        pullRequest.state === MERGED
           ? moment(pullRequest.mergedAt).isAfter(
               moment(dateStart, 'YYYY-MM-DD')
             )
@@ -65,10 +79,10 @@ export const pullRequestsMapper = (body, dateStart = null, dateEnd = null) => {
             )
     )
   return {
-    total_pull_requests: pullRequests.nodes.length,
-    merged_pull_requests: countByState('MERGED', pullRequests.nodes),
-    open_pull_requests: countByState('OPEN', pullRequests.nodes),
-    closed_pull_requests: countByState('CLOSED', pullRequests.nodes),
+    total_pull_requests: repository.total_pull_requests.totalCount,
+    merged_pull_requests: repository.merged_pull_requests.totalCount,
+    open_pull_requests: repository.open_pull_requests.totalCount,
+    closed_pull_requests: repository.closed_pull_requests.totalCount,
     pull_requests: pullRequests.nodes.map(pullRequest => ({
       title: pullRequest.title,
       state: pullRequest.state,

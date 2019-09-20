@@ -11,15 +11,24 @@ const client = graphqlClient({
   headers
 })
 
-export const getRepositoryInfo = ({
-  repository,
-  organization = 'wolox-training'
-}) =>
+export const getRepositoryInfo = ({ repository, organization = 'Wolox' }) =>
   client.query(
     `
 query {
   repository(name:"${repository}", owner:"${organization}") {
-    pullRequests(last:100) {
+    closed_pull_requests: pullRequests(states:CLOSED) {
+      totalCount
+    }
+    merged_pull_requests: pullRequests(states:MERGED) {
+      totalCount
+    }
+    open_pull_requests: pullRequests(states:OPEN) {
+      totalCount
+    }
+    total_pull_requests: pullRequests {
+      totalCount
+    }
+    pullRequests(first: 100, orderBy: {field: CREATED_AT, direction:DESC} ) {
       nodes {
         number,
         updatedAt,
